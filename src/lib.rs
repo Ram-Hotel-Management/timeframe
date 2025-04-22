@@ -37,11 +37,6 @@ pub struct EvenTimeframe<Tz: TimeZone + Copy> {
     window: TimeWindow,
 }
 
-// impl<Tz: TimeZone> Copy for EvenTimeframe<Tz> where
-//     <Tz as chrono::TimeZone>::Offset: std::marker::Copy
-// {
-// }
-
 /// Easy Access functions
 impl<Tz: TimeZone + Copy> EvenTimeframe<Tz> {
     pub fn start(&self) -> &DateTime<Tz> {
@@ -51,17 +46,17 @@ impl<Tz: TimeZone + Copy> EvenTimeframe<Tz> {
     pub fn end(&self) -> &DateTime<Tz> {
         &self.frame.end
     }
+
+    /// Get the timeframe window
+    pub fn window(&self) -> &TimeWindow {
+        &self.window
+    }
 }
 
 impl<Tz: TimeZone + Copy> EvenTimeframe<Tz>
 where
     <Tz as chrono::TimeZone>::Offset: Copy,
 {
-    /// Get the timeframe window
-    pub fn window(&self) -> &TimeWindow {
-        &self.window
-    }
-
     /// Chops up the given timeframe after flooring the start time
     /// and ceiling the end time based on the provided window
     pub fn split(mut frame: Timeframe<Tz>, mut window: TimeWindow) -> Result<Vec<Self>, TimeErr> {
