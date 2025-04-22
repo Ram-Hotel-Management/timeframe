@@ -1,37 +1,21 @@
-use std::fmt::Display;
+use thiserror::Error;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum TimeErr {
     /// Unable to floor the time
     /// to a given window
+    #[error("An error occurred while flooring the time")]
     Floor,
     /// Unable to ceil the time
     /// to a given window
+    #[error("An error occurred while Ceiling the time")]
     Ceil,
     /// Timeframe is too large
+    #[error(
+        "Provided timeframe is too large to process. Try reducing the timeframe to fewer days/ weeks"
+    )]
     FrameTooLarge,
     /// Custom
+    #[error("{0}")]
     Other(String),
 }
-
-impl Display for TimeErr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-// impl std::error::Error for TimeErr {
-//     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-//         Some(self)
-//     }
-
-//     fn description(&self) -> &str {
-//         "description() is deprecated; use Display"
-//     }
-
-//     fn cause(&self) -> Option<&dyn std::error::Error> {
-//         self.source()
-//     }
-// }
-
-impl std::error::Error for &TimeErr {}
