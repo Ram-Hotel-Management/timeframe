@@ -48,7 +48,7 @@ impl<Tz: TimeZone + Copy> EvenTimeframe<Tz> {
     }
 
     /// Get the timeframe window
-    pub fn window(&self) -> &TimeWindow {
+    pub fn get_window(&self) -> &TimeWindow {
         &self.window
     }
 }
