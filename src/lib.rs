@@ -32,13 +32,13 @@ where
 /// - window size: 15 & time: 12:14:12 -> 12:00:00
 /// - window size: 5 & time: 00:05:01 -> 00:05:00
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct EvenTimeframe<Tz: TimeZone + Copy> {
+pub struct EvenTimeframe<Tz: TimeZone> {
     pub frame: Timeframe<Tz>,
     window: TimeWindow,
 }
 
 /// Easy Access functions
-impl<Tz: TimeZone + Copy> EvenTimeframe<Tz> {
+impl<Tz: TimeZone> EvenTimeframe<Tz> {
     pub fn start(&self) -> &DateTime<Tz> {
         &self.frame.start
     }
