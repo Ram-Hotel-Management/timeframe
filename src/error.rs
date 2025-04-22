@@ -20,16 +20,18 @@ impl Display for TimeErr {
     }
 }
 
-impl std::error::Error for TimeErr {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        Some(self)
-    }
+// impl std::error::Error for TimeErr {
+//     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+//         Some(self)
+//     }
 
-    fn description(&self) -> &str {
-        "description() is deprecated; use Display"
-    }
+//     fn description(&self) -> &str {
+//         "description() is deprecated; use Display"
+//     }
 
-    fn cause(&self) -> Option<&dyn std::error::Error> {
-        self.source()
-    }
-}
+//     fn cause(&self) -> Option<&dyn std::error::Error> {
+//         self.source()
+//     }
+// }
+
+impl std::error::Error for &TimeErr {}
