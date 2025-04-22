@@ -15,7 +15,10 @@ pub struct Timeframe<Tz: TimeZone> {
 
 impl<Tz: TimeZone> Copy for Timeframe<Tz> where <Tz as chrono::TimeZone>::Offset: std::marker::Copy {}
 
-impl<Tz: TimeZone> Timeframe<Tz> {
+impl<Tz: TimeZone + Copy> Timeframe<Tz>
+where
+    <Tz as chrono::TimeZone>::Offset: Copy,
+{
     /// convert into an even timeframe
     pub fn into_even(self, window: TimeWindow) -> Option<EvenTimeframe<Tz>> {
         EvenTimeframe::new(self.start, window)
@@ -29,18 +32,18 @@ impl<Tz: TimeZone> Timeframe<Tz> {
 /// - window size: 15 & time: 12:14:12 -> 12:00:00
 /// - window size: 5 & time: 00:05:01 -> 00:05:00
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct EvenTimeframe<Tz: TimeZone> {
+pub struct EvenTimeframe<Tz: TimeZone + Copy> {
     pub frame: Timeframe<Tz>,
     window: TimeWindow,
 }
 
-impl<Tz: TimeZone> Copy for EvenTimeframe<Tz> where
-    <Tz as chrono::TimeZone>::Offset: std::marker::Copy
-{
-}
+// impl<Tz: TimeZone> Copy for EvenTimeframe<Tz> where
+//     <Tz as chrono::TimeZone>::Offset: std::marker::Copy
+// {
+// }
 
 /// Easy Access functions
-impl<Tz: TimeZone> EvenTimeframe<Tz> {
+impl<Tz: TimeZone + Copy> EvenTimeframe<Tz> {
     pub fn start(&self) -> &DateTime<Tz> {
         &self.frame.start
     }
@@ -50,7 +53,10 @@ impl<Tz: TimeZone> EvenTimeframe<Tz> {
     }
 }
 
-impl<Tz: TimeZone> EvenTimeframe<Tz> {
+impl<Tz: TimeZone + Copy> EvenTimeframe<Tz>
+where
+    <Tz as chrono::TimeZone>::Offset: Copy,
+{
     /// Chops up the given timeframe after flooring the start time
     /// and ceiling the end time based on the provided window
     pub fn split(mut frame: Timeframe<Tz>, mut window: TimeWindow) -> Result<Vec<Self>, TimeErr> {
@@ -59,7 +65,7 @@ impl<Tz: TimeZone> EvenTimeframe<Tz> {
         })?;
         frame.start = frame.start.closest_floor(window).ok_or(TimeErr::Floor)?;
         frame.end = frame.end.closest_ceil(window).ok_or(TimeErr::Ceil)?;
-        let delta = frame.end.clone() - frame.start.clone();
+        let delta = frame.end - frame.start;
 
         if delta.num_weeks() >= 15 {
             return Err(TimeErr::FrameTooLarge);
@@ -74,12 +80,9 @@ impl<Tz: TimeZone> EvenTimeframe<Tz> {
         let mut curr = frame.start;
         let mut time_frames = Vec::new();
         while curr < frame.end {
-            let end = curr.clone() + chrono::Duration::minutes(window as i64);
+            let end = curr + chrono::Duration::minutes(window as i64);
             let fr = EvenTimeframe {
-                frame: Timeframe {
-                    start: curr,
-                    end: end.clone(),
-                },
+                frame: Timeframe { start: curr, end },
                 window,
             };
 
@@ -101,7 +104,7 @@ impl<Tz: TimeZone> EvenTimeframe<Tz> {
         }
 
         let frame = Timeframe {
-            start: start.clone(),
+            start,
             end: start + chrono::Duration::minutes(window as i64),
         };
 
@@ -115,7 +118,7 @@ impl<Tz: TimeZone> EvenTimeframe<Tz> {
     pub fn align(&mut self) -> Option<()> {
         // SAFETY: the number is always valid
         let new_start = self.start().closest_floor(self.window)?;
-        self.frame.start = new_start.clone();
+        self.frame.start = new_start;
         self.frame.end = new_start + chrono::Duration::minutes(self.window as i64);
         Some(())
     }
@@ -124,8 +127,8 @@ impl<Tz: TimeZone> EvenTimeframe<Tz> {
     /// makes start = end and end += window
     pub fn next(&self) -> Self {
         let frame = Timeframe {
-            start: self.end().clone(),
-            end: self.end().clone() + chrono::Duration::minutes(self.window as i64),
+            start: *self.end(),
+            end: *self.end() + chrono::Duration::minutes(self.window as i64),
         };
 
         Self {

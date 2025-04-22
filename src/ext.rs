@@ -38,7 +38,10 @@ pub trait ClosestFloor<Tz: TimeZone> {
         Self: Sized;
 }
 
-impl<Tz: TimeZone> ClosestFloor<Tz> for DateTime<Tz> {
+impl<Tz: TimeZone> ClosestFloor<Tz> for DateTime<Tz>
+where
+    <Tz as chrono::TimeZone>::Offset: Copy,
+{
     fn closest_floor(&self, mut window: TimeWindow) -> Option<DateTime<Tz>> {
         let start_min = prep_time(self, &mut window)?;
         let closest_floor = (start_min / window) * window;
@@ -58,14 +61,16 @@ pub trait ClosestCeil<Tz: TimeZone> {
         Self: Sized;
 }
 
-impl<Tz: TimeZone> ClosestCeil<Tz> for DateTime<Tz> {
+impl<Tz: TimeZone + Copy> ClosestCeil<Tz> for DateTime<Tz>
+where
+    <Tz as chrono::TimeZone>::Offset: Copy,
+{
     fn closest_ceil(&self, mut window: TimeWindow) -> Option<DateTime<Tz>> {
         let start_min = prep_time(self, &mut window)?;
         let closest_ceil = start_min.div_ceil(window) * window;
 
         if closest_ceil >= 60 {
-            self.clone()
-                .checked_add_signed(TimeDelta::hours(1))?
+            self.checked_add_signed(TimeDelta::hours(1))?
                 .with_minute(0)?
                 .with_second(0)
         } else {
