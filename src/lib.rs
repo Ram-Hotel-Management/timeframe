@@ -25,6 +25,8 @@ where
     }
 }
 
+pub type EvenTimeframeUtc = EvenTimeframe<Utc>;
+
 /// Even timeframe ensures the provided timeframe is
 /// always evenly split where the seconds & milliseconds is always 00 and floored to closest window multiple.
 /// For instance
@@ -50,6 +52,17 @@ impl<Tz: TimeZone> EvenTimeframe<Tz> {
     /// Get the timeframe window
     pub fn get_window(&self) -> TimeWindow {
         self.window
+    }
+
+    /// convert the Type to Utc
+    pub fn to_utc(&self) -> EvenTimeframeUtc {
+        EvenTimeframe::<chrono::Utc> {
+            frame: Timeframe {
+                start: self.start().to_utc(),
+                end: self.end().to_utc(),
+            },
+            window: self.window,
+        }
     }
 }
 
