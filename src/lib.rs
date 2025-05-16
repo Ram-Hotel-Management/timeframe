@@ -20,9 +20,18 @@ where
     <Tz as chrono::TimeZone>::Offset: Copy,
 {
     /// convert into an even timeframe
-    pub fn into_even(self, window: TimeWindow) -> Option<EvenTimeframe<Tz>> {
+    pub fn into_even(self, window: TimeWindow) -> EvenTimeframe<Tz> {
         EvenTimeframe::new(self.start, window)
     }
+}
+
+fn closest_factor_of_60(window: TimeWindow) -> TimeWindow {
+    let window = window.clamp(0, 60);
+    const FACTORS_60: [TimeWindow; 12] = [1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60];
+    *FACTORS_60
+        .iter()
+        .min_by_key(|n| window.abs_diff(**n))
+        .unwrap()
 }
 
 pub type EvenTimeframeUtc = EvenTimeframe<Utc>;
@@ -110,12 +119,8 @@ where
 
     /// time frame to adjust this will floor to closest window multiple.
     /// Expects window to be a factor 60
-    pub fn new(start: DateTime<Tz>, window: TimeWindow) -> Option<Self> {
-        let window = window.clamp(0, 60);
-
-        if 60 % window != 0 {
-            return None;
-        }
+    pub fn new(start: DateTime<Tz>, window: TimeWindow) -> Self {
+        let window = closest_factor_of_60(window);
 
         let frame = Timeframe {
             start,
@@ -124,7 +129,7 @@ where
 
         let mut s = Self { frame, window };
         s.align();
-        s.into()
+        s
     }
 
     /// aligns the timeframe to the closest floor window multiple
@@ -153,6 +158,15 @@ where
 }
 
 #[test]
+fn find_closest_window() {
+    assert_eq!(closest_factor_of_60(9), 10);
+    assert_eq!(closest_factor_of_60(14), 15);
+    assert_eq!(closest_factor_of_60(12), 12);
+    assert_eq!(closest_factor_of_60(13), 12);
+    assert_eq!(closest_factor_of_60(17), 15); // both 15 and 20 result in 2.5 but 15 is returned since that appears 15 before 20 in the const array
+}
+
+#[test]
 fn timeframe_tests() {
     let dt = Utc.with_ymd_and_hms(2014, 7, 8, 9, 10, 11).unwrap(); // `2014-07-08T09:10:11Z`
 
@@ -162,7 +176,7 @@ fn timeframe_tests() {
     // Check 9:00-10:00 / 60 min window
     let base_start_time = Utc.with_ymd_and_hms(2014, 7, 8, 9, 0, 0).unwrap();
     let base_end_time = Utc.with_ymd_and_hms(2014, 7, 8, 10, 0, 0).unwrap();
-    let even = EvenTimeframe::new(dt, window).unwrap();
+    let even = EvenTimeframe::new(dt, window);
 
     assert_eq!(even.frame.start, base_start_time);
     assert_eq!(base_end_time, even.frame.end);
@@ -180,7 +194,7 @@ fn timeframe_tests() {
     // Check 9:10-9:15 / 5 min window
     let base_start_time = Utc.with_ymd_and_hms(2014, 7, 8, 9, 10, 0).unwrap();
     let base_end_time = Utc.with_ymd_and_hms(2014, 7, 8, 9, 15, 0).unwrap();
-    let even = EvenTimeframe::new(dt, window).unwrap();
+    let even = EvenTimeframe::new(dt, window);
 
     assert_eq!(even.frame.start, base_start_time);
     assert_eq!(base_end_time, even.frame.end);
@@ -197,8 +211,8 @@ fn timeframe_tests() {
     let start = Utc.with_ymd_and_hms(2014, 7, 8, 9, 15, 12).unwrap();
     let end = Utc.with_ymd_and_hms(2014, 7, 8, 21, 16, 12).unwrap();
     let chopped = EvenTimeframe::split(Timeframe { start, end }, window).unwrap();
-    let first_res = EvenTimeframe::new(start, window).unwrap();
+    let first_res = EvenTimeframe::new(start, window);
     assert_eq!(*chopped.first().unwrap(), first_res);
-    let last_res = EvenTimeframe::new(end, window).unwrap();
+    let last_res = EvenTimeframe::new(end, window);
     assert_eq!(last_res, *chopped.last().unwrap())
 }
