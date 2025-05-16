@@ -55,6 +55,7 @@ impl<Tz: TimeZone> EvenTimeframe<Tz> {
     }
 
     /// convert the Type to Utc
+    /// short hand function
     pub fn to_utc(&self) -> EvenTimeframeUtc {
         EvenTimeframe::<chrono::Utc> {
             frame: Timeframe {
