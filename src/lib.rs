@@ -142,6 +142,21 @@ where
         Some(())
     }
 
+    /// gets the previous timeframe
+    /// end will be set to current start
+    /// and start will be set start - window
+    pub fn prev(&self) -> Self {
+        let frame = Timeframe {
+            start: *self.start() - chrono::Duration::minutes(self.window as i64),
+            end: *self.start(),
+        };
+
+        Self {
+            frame,
+            window: self.window,
+        }
+    }
+
     /// get the next time frame
     /// makes start = end and end += window
     pub fn next(&self) -> Self {
